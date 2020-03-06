@@ -2,6 +2,14 @@
 
 This application will download maps as tiles with TMS tile support
 
+### Installation
+
+```
+$ npm install get-offline-maps
+```
+
+### Usage
+
 copy below code inside `index.js`
 ```
 var gom = require('get-offline-maps');

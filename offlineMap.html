@@ -146,8 +146,8 @@
   <body>
     <div id="startStopDrap" class="overlayCurtain"><a>Please Wait ...</a></div>
     <div>
-      <select id="variousMap" style="font-size:15px;color:black;position:absolute;z-index:1;left:50%;margin:0;">
-        <option value="MMIR">MMIR</option>
+      <select id="variousMap" style="font-size:15px;color:black;position:absolute;z-index:1;left:50%;margin:0;display:none;">
+        <option value="GOMR">GOMR</option>
       </select>
     </div>
     <div id="mapContainer">
@@ -169,13 +169,13 @@
     <script src='js/mapbox-gl-draw.1.0.9.js'></script>
     <script src='js/mapbox-gl-draw-rectangle-mode.min.js'></script>
     <script>
-      if (typeof vidteq == "undefined") { vidteq = {}; }
+      if (typeof gom == "undefined") { gom = {}; }
 
-      vidteq.__offlineMap = function () {
+      gom.__offlineMap = function () {
         this.init();
       }
 
-      vidteq.__offlineMap.prototype.init = function () {
+      gom.__offlineMap.prototype.init = function () {
         var that = this;
         $("#variousMap").change(function () {
           var mapId = $(this).val();
@@ -210,13 +210,13 @@
         this.mapInit();
       }
 
-      vidteq.__offlineMap.prototype.mapInit = function (maps) {
+      gom.__offlineMap.prototype.mapInit = function (maps) {
         if (typeof maps == "undefined" || maps == "") {
-          maps = "MMIR";
+          maps = "GOMR";
         }
         $("#variousMap").val(maps);
         var that = this;
-        if (maps == "MMIR") {
+        if (maps == "GOMR") {
           var getAccessUrl = "";
           var proto = ('https:' === document.location.protocol ? 'https:' : 'http:');
           var host = document.location.host || 'localhost:3127';
@@ -234,18 +234,18 @@
               }
               $.ajax({
                 type: "GET",
-                url: "js/styleMMIRaster.json",
+                url: "js/styleRaster.json",
                 dataType: "json",
-                success: function (vidteqMap) {
-                  if(vidteqMap && vidteqMap['sources'] && vidteqMap['sources']['offline-tiles'] && vidteqMap['sources']['offline-tiles']['tiles'] && vidteqMap['sources']['offline-tiles']['tiles'].length) {
-                    vidteqMap['sources']['offline-tiles']['tiles'][0] = vidteqMap['sources']['offline-tiles']['tiles'][0].replace(/\{getAccessUrl\}/, getAccessUrl);
+                success: function (gomMap) {
+                  if(gomMap && gomMap['sources'] && gomMap['sources']['offline-tiles'] && gomMap['sources']['offline-tiles']['tiles'] && gomMap['sources']['offline-tiles']['tiles'].length) {
+                    gomMap['sources']['offline-tiles']['tiles'][0] = gomMap['sources']['offline-tiles']['tiles'][0].replace(/\{getAccessUrl\}/, getAccessUrl);
                   }
                   if (that.map) {
-                    that.map.setStyle(vidteqMap);
+                    that.map.setStyle(gomMap);
                   } else {
                     var map = new mapboxgl.Map({
                       container: "map",
-                      style: vidteqMap,
+                      style: gomMap,
                       minzoom: 10,
                       center: [77.6, 12.96],
                       zoom: 11,
@@ -274,7 +274,7 @@
         }
       }
 
-      vidteq.__offlineMap.prototype.attachMapEvents = function () {
+      gom.__offlineMap.prototype.attachMapEvents = function () {
         var that = this;
         this.map.addControl(new mapboxgl.NavigationControl());
         this.map.addControl(new mapboxgl.FullscreenControl());
@@ -397,7 +397,7 @@
         });
       }
 
-      vidteq.__offlineMap.prototype.getTileNumber = function (bbox) {
+      gom.__offlineMap.prototype.getTileNumber = function (bbox) {
         var that = this;
         var ajaxData = {bbox:bbox.toString()};
         var proto = ('https:' === document.location.protocol ? 'https:' : 'http:');
@@ -449,7 +449,7 @@
         });
       }
 
-      vidteq.__offlineMap.prototype.downloadTile = function (zoom,tileList) {
+      gom.__offlineMap.prototype.downloadTile = function (zoom,tileList) {
         console.log(zoom);
         var that = this;
         var ajaxData = {zoom:zoom,tileList:tileList};
@@ -484,7 +484,7 @@
         });
       }
 
-      vidteq.offlineMap = new vidteq.__offlineMap();
+      gom.offlineMap = new gom.__offlineMap();
     </script>
   </body>
 </html>
