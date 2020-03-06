@@ -1,6 +1,6 @@
 {
   "name": "get-offline-maps",
-  "version": "1.0.20",
+  "version": "1.0.21",
   "description": "This will get offline maps cut as raster tile",
   "main": "index.js",
   "scripts": {

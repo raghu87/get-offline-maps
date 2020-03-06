@@ -19,8 +19,14 @@ var port = "3127";
 gom.getOfflineMaps(getAccessUrl,outputDir,port);
 ```
 
+then run
+```
+node index.js
+```
+
 Preview at browser
 ```
+
 http://localhost:3127/index.html
 ```
 
