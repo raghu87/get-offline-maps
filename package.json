@@ -1,0 +1,30 @@
+{
+  "name": "get-offline-maps",
+  "version": "1.0.19",
+  "description": "This will get offline maps cut as raster tile",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "get-tile-number": "^1.0.10",
+    "tippecanoe": "^0.3.0",
+    "mkdir-recursive": "^0.4.0"
+  },
+  "author": "Raghavendra Achar",
+  "license": "ISC",
+  "devDependencies": {},
+  "keywords": [
+    "get-offline-maps",
+    "maps",
+    "offline"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/raghu87/get-offline-maps.git"
+  },
+  "bugs": {
+    "url": "https://github.com/raghu87/get-offline-maps/issues"
+  },
+  "homepage": "https://github.com/raghu87/get-offline-maps#readme"
+}

@@ -1,0 +1,19 @@
+{
+  "version": 8
+  ,"sources": {
+    "offline-tiles": {
+      "type": "raster"
+      ,"tiles": [
+        "{getAccessUrl}/{z}/{x}/{y}.png"
+      ]
+      ,"tileSize": 256
+    }
+  }
+  ,"layers": [{
+    "id": "offline-tiles"
+    ,"type": "raster"
+    ,"source": "offline-tiles"
+    ,"minzoom": 10
+    ,"maxzoom": 22
+  }]
+}

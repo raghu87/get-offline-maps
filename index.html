@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" class="offline-container">
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap-3.3.7.min.css">
+    <style>
+      html, body, .wrapper {
+        height:100%;
+        width:100%;
+        margin:auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+      <center class="wrapper">
+        <div  class="wrapper">
+          <div style="display: inline-block; position: sticky; top: 2px; background: white; z-index: 20; height: 12%;">
+            <h4 style="margin-top: 0;color:#55518a">Offline Map</h4>
+            <div class="row">
+              <input id="offlineMapLon" placeholder="Longitude" class="form-control" type="text" style="width: 23%;margin: 1%;display: inline;">
+              <input id="offlineMapLat" placeholder="Latitude" class="form-control" type="text" style="width: 23%;margin: 1%;display: inline;">
+              <button class="btn btn-default" style="width: 44%;margin: 1%;display: inline;" id="offlineMapCenter">Set Center</button>
+            </div>
+          </div>
+          <div class="row" style="text-align:left;margin: 5px 0px;height:85%;width:100%;">
+            <div class="col-md-12 wrapper" id="offlineMapDivContainer">
+              <iframe id="offlineMapIframe" class="wrapper" style="border: 0px;" src="./offlineMap.html"></iframe>
+            </div>
+          </div>
+        </div>
+      </center>
+    </div>
+    <script type="text/javascript" src="js/jquery-1.12.4.min.js"></script>
+    <script>
+      $(document).ready(function () {
+        $('#offlineMapCenter').click(function () {
+          var lonStr = $('#offlineMapLon').val();
+          var latStr = $('#offlineMapLat').val();
+          var dataMessage = {"action":"setCenter",lon:lonStr,lat:latStr};
+          var iframeEl = document.getElementById("offlineMapIframe");
+          if (iframeEl) {
+            iframeEl.contentWindow.postMessage(JSON.stringify(dataMessage), "*");
+          } else {
+            alert("no iframe found");
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en" class="offline-container">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=0">
+    <title>GAZE</title>
+    <link href='css/mapbox-gl.0.44.1.css' rel='stylesheet' />
+    <link rel='stylesheet' href='css/mapbox-gl-draw.1.0.9.css' type='text/css'/>
+    <link rel="stylesheet" type="text/css" href="fonts/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="css/bootstrap-3.3.7.min.css">
+    <style>
+      .offline-container html, .offline-container body {
+        width:100%;
+        height:100%;
+        margin:0;
+        font-family: 'Poppins', sans-serif;
+        background: #fafafa;
+      }
+
+      .offline-container #map {
+        height:100vh;
+        width:100vw;
+      }
+
+      .offline-container #mapMenuContainer {
+        display:none;
+        width: 150px;
+        height: 76px;
+        background: white;
+        z-index: 10000;
+        position: absolute;
+        top: 148px;
+        right:45px;
+        border: 1px solid #b1aaaa;
+        font-size:12px;
+        text-align:center;
+      }
+
+      .offline-container #mapMenuContainer div {
+        border-bottom: 1px solid #b1aaaa;
+        color:#353434;
+        cursor: pointer;
+        padding:10px 0;
+      }
+
+      .offline-container .highlight {
+        background:yellow;
+      }
+
+      .offline-container #mapMenuContainer div:last-child {
+        border-bottom: none;
+        color:#353434;
+        cursor: pointer;
+        padding:10px 0px;
+      }
+
+      .offline-container #mapOfflineZoomLvlContainer {
+        display:none;
+        width: 120px;
+        height: 115px;
+        background: white;
+        z-index: 10000;
+        position: absolute;
+        top: 6px;
+        left:195px;
+        border: 1px solid #b1aaaa;
+        font-size:12px;
+        text-align:center;
+        overflow:hidden;
+        overflow-y:scroll;
+        padding: 5px 0;
+      }
+
+      .offline-container #mapOfflineZoomLvlContainer label {
+        display: block;
+        padding-left: 15px;
+        text-indent: -15px;
+      }
+      .offline-container #mapOfflineZoomLvlContainer input {
+        width: 13px;
+        height: 13px;
+        padding: 0;
+        margin:0;
+        vertical-align: bottom;
+        position: relative;
+        top: -1px;
+        *overflow: hidden;
+      }
+
+      .offline-container #mapOfflineMenuContainer {
+        display:none;
+        width: 150px;
+        height: 115px;
+        background: white;
+        z-index: 10000;
+        position: absolute;
+        top: 6px;
+        left:42px;
+        border: 1px solid #b1aaaa;
+        font-size:12px;
+        text-align:center;
+      }
+
+      .offline-container #mapOfflineMenuContainer div {
+        border-bottom: 1px solid #b1aaaa;
+        color:#353434;
+        cursor: pointer;
+        padding:10px 0;
+      }
+
+      .offline-container #mapOfflineMenuContainer div:last-child {
+        border-bottom: none;
+        color:#353434;
+        cursor: pointer;
+        padding:10px 0px;
+      }
+
+      .offline-container .overlayCurtain {
+        position: fixed;
+        /* full screen */
+        width: 100vw;
+        height: 100vh;
+        /* transparent black */
+        background: rgba(0, 0, 0, 0.4);
+        /* middle layer, i.e. appears below the sidebar */
+        z-index: 100000;
+        display: none;
+        pointer-events: none;
+      }
+
+      .offline-container .overlayCurtain a {
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        margin: auto;
+        right: 0px;
+        bottom: 0px;
+        width: 140px;
+        height: 14px;
+        line-height: 14px;
+        color: white;
+        font-size: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="startStopDrap" class="overlayCurtain"><a>Please Wait ...</a></div>
+    <div>
+      <select id="variousMap" style="font-size:15px;color:black;position:absolute;z-index:1;left:50%;margin:0;">
+        <option value="MMIR">MMIR</option>
+      </select>
+    </div>
+    <div id="mapContainer">
+      <div id='map'></div>
+      <div id="mapMenuDiv" style="position: absolute;left: 8px;top: 6px;">
+        <button id='mapMenuBtn' class='btn btn-default btn-sm'><i class="fa fa-bars" aria-hidden="true"></i></button>
+      </div>
+      <div id="mapOfflineMenuContainer">
+        <div id="drawPolyOffline">Draw Poly</div>
+        <div id="cancelDrawPolyOffline">Cancel Draw Poly</div>
+        <div id="getOfflineTileSet">Get Tile Sets</div>
+      </div>
+      <div id="mapOfflineZoomLvlContainer">
+      </div>
+    </div>
+    <script type="text/javascript" src="js/jquery-1.12.4.min.js"></script>
+    <script src='js/mapbox-gl.0.44.1.js'></script>
+    <script src='js/turf.3.0.11.min.js'></script>
+    <script src='js/mapbox-gl-draw.1.0.9.js'></script>
+    <script src='js/mapbox-gl-draw-rectangle-mode.min.js'></script>
+    <script>
+      if (typeof vidteq == "undefined") { vidteq = {}; }
+
+      vidteq.__offlineMap = function () {
+        this.init();
+      }
+
+      vidteq.__offlineMap.prototype.init = function () {
+        var that = this;
+        $("#variousMap").change(function () {
+          var mapId = $(this).val();
+        });
+        window.onmessage = function (e) {
+          console.log('inside onmessage',e);
+          if(e && e.data) {
+            if(typeof(e.data) == 'string') {
+              var dataStr = JSON.parse(e.data);
+              if(dataStr && dataStr.action) {
+                switch(dataStr.action) {
+                  case "setCenter":
+                    var setLon = dataStr.lon || 77.6;
+                    var setLat = dataStr.lat || 12.96;
+                    if(that.mapLoadEnded) {
+                      that.map.flyTo({
+                        center: [setLon,setLat],
+                        zoom: 11,
+                        duration: 9000,
+                        easing: function (t) {
+                          return t * (2 - t);
+                        }
+                      });
+                    }
+                    break;
+                  default: break;
+                }
+              }
+            }
+          }
+        };
+        this.mapInit();
+      }
+
+      vidteq.__offlineMap.prototype.mapInit = function (maps) {
+        if (typeof maps == "undefined" || maps == "") {
+          maps = "MMIR";
+        }
+        $("#variousMap").val(maps);
+        var that = this;
+        if (maps == "MMIR") {
+          var getAccessUrl = "";
+          var proto = ('https:' === document.location.protocol ? 'https:' : 'http:');
+          var host = document.location.host || 'localhost:3127';
+          var url = proto + "//" + host;
+          console.log(url);
+          $.ajax({
+            url: url+"/getAccessUrl"
+            ,type: "POST"
+            ,dataType: "json"
+            //,"crossDomain": true
+            ,success: function (res) {
+              console.log('res',res);
+              if(res && res.accessKey) {
+                getAccessUrl = res.accessKey;
+              }
+              $.ajax({
+                type: "GET",
+                url: "js/styleMMIRaster.json",
+                dataType: "json",
+                success: function (vidteqMap) {
+                  if(vidteqMap && vidteqMap['sources'] && vidteqMap['sources']['offline-tiles'] && vidteqMap['sources']['offline-tiles']['tiles'] && vidteqMap['sources']['offline-tiles']['tiles'].length) {
+                    vidteqMap['sources']['offline-tiles']['tiles'][0] = vidteqMap['sources']['offline-tiles']['tiles'][0].replace(/\{getAccessUrl\}/, getAccessUrl);
+                  }
+                  if (that.map) {
+                    that.map.setStyle(vidteqMap);
+                  } else {
+                    var map = new mapboxgl.Map({
+                      container: "map",
+                      style: vidteqMap,
+                      minzoom: 10,
+                      center: [77.6, 12.96],
+                      zoom: 11,
+                      hash: true,
+                      maxzoom: 22,
+                      interactive: true,
+                      attributionControl: false
+                    });
+                    that.map = map;
+                    that.attachMapEvents();
+                  }
+                  that.map.flyTo({
+                    center: [77.6, 12.96],
+                    zoom: 11,
+                    duration: 9000,
+                    easing: function (t) {
+                      return t * (2 - t);
+                    }
+                  });
+                }
+              });
+            }
+            ,error: function (res) {
+            }
+          });
+        }
+      }
+
+      vidteq.__offlineMap.prototype.attachMapEvents = function () {
+        var that = this;
+        this.map.addControl(new mapboxgl.NavigationControl());
+        this.map.addControl(new mapboxgl.FullscreenControl());
+        this.map.addControl(new mapboxgl.GeolocateControl({
+          positionOptions: {
+            enableHighAccuracy: true
+          },
+          trackUserLocation: true
+        }));
+        this.map.on("mousemove", function (e) {
+          $("#mapLatLongInfo").html(
+            "      " + e.lngLat.lng.toFixed(5) + ", " + e.lngLat.lat.toFixed(5)
+          );
+        });
+        this.reRotate = true;
+        this.mapLoadEnded = false;
+        this.featureGeojson = {
+          type: "FeatureCollection",
+          features: []
+        };
+        $("#mapReRotate").click(function (event) {
+          that.mapRotate();
+        });
+
+        $("#mapMenuBtn").click(function (event) {
+          console.log("map menu btn clicked");
+          $('#mapContainer div').removeClass('highlight');
+          $('#mapOfflineMenuContainer').hide('slow');
+          $('#mapOfflineZoomLvlContainer').hide('slow');
+          if($('#mapOfflineMenuContainer').is(':visible')) {
+            $('#mapOfflineMenuContainer').hide('slow');
+            $('#mapOfflineZoomLvlContainer').hide('slow');
+          } else {
+            $('#mapOfflineMenuContainer').show('slow');
+          }
+        });
+
+        $("#drawPolyOffline").click(function (event) {
+          if($('#mapOfflineZoomLvlContainer').is(':visible')) {
+            $('#mapOfflineZoomLvlContainer').hide('slow');
+          }
+          if(that.mapLoadEnded) {
+            $('#mapContainer div').removeClass('highlight');
+            $(this).addClass('highlight');
+            if(!that.mapModes) {
+              that.mapModes = MapboxDraw.modes;
+              that.mapModes.draw_rectangle = DrawRectangle.default;
+              that.mapModes.none = "";
+              that.mapDraw = new MapboxDraw({
+                modes: that.mapModes,
+                displayControlsDefault: false,
+                controls: {
+                  polygon: false,
+                  trash: false
+                }
+              });
+              that.map.addControl(that.mapDraw);
+            }
+
+            var data = that.mapDraw.getAll();
+            if(data.features.length > 0) {
+              that.mapDraw.deleteAll().getAll();
+            }
+            that.mapDraw.changeMode('draw_rectangle');
+          } else {
+            alert("Let the online map load first");
+          }
+        });
+
+        $("#cancelDrawPolyOffline").click(function (event) {
+          if($('#mapOfflineZoomLvlContainer').is(':visible')) {
+            $('#mapOfflineZoomLvlContainer').hide('slow');
+          }
+          if(that.mapDraw) {
+            $('#mapContainer div').removeClass('highlight');
+            $(this).addClass('highlight');
+            var data = that.mapDraw.getAll();
+            if(data.features.length > 0) {
+              that.mapDraw.deleteAll().getAll();
+            }
+            that.mapDraw.changeMode('none');
+          } else {
+            alert('draw the polygon bounding box');
+          }
+        });
+
+        $("#getOfflineTileSet").click(function (event) {
+          if(that.mapDraw) {
+            $('#mapContainer div').removeClass('highlight');
+            var data = that.mapDraw.getAll();
+            if(data.features.length > 0) {
+              console.log(data.features[0].geometry.coordinates[0][0]);
+              if(data.features[0].geometry.coordinates[0] && data.features[0].geometry.coordinates[0][0]) {
+                $(this).addClass('highlight');
+                console.log(data);
+                var bbox = turf.bbox(data);
+                console.log(JSON.stringify(bbox));
+                that.getTileNumber(bbox);
+                return;
+              }
+            }
+            that.mapDraw.changeMode('none');
+          }
+          alert('draw the polygon bounding box');
+          that.mapDraw.changeMode('none');
+        });
+
+        this.map.on("load", function () {
+          //console.log("maploaded");
+          that.mapLoadEnded = true;
+        });
+
+        this.map.on('zoom', () => {
+          const currentZoom = that.map.getZoom();
+          if (currentZoom < 10 || currentZoom > 22) {
+            //console.log('max or min zoom is reached');// zoom in
+          } else {
+            //console.log(currentZoom);// zoom out
+          }
+        });
+      }
+
+      vidteq.__offlineMap.prototype.getTileNumber = function (bbox) {
+        var that = this;
+        var ajaxData = {bbox:bbox.toString()};
+        var proto = ('https:' === document.location.protocol ? 'https:' : 'http:');
+        var host = document.location.host || 'localhost:3127';
+        var url = proto + "//" + host;
+        $.ajax({
+          url: url+"/getTileSet"
+          ,type: "POST"
+          ,dataType: "json"
+          //,"crossDomain": true
+          ,data: JSON.stringify(ajaxData)
+          ,success: function (res) {
+            if(res.zoomLvl) {
+              var html = "";
+              for(var i in res.zoomLvl) {
+                if(res.zoomLvl[i]<=9) continue;
+                if(res.zoomLvl[i]>18) continue;
+                html += '<div><label><input id="offlineZoom_'+res.zoomLvl[i]+'" type="checkbox" value="'+res.zoomLvl[i]+'"/> Zoom '+res.zoomLvl[i]+'</label></div>';
+              }
+              $('#mapOfflineZoomLvlContainer').html(html);
+              $('#mapOfflineZoomLvlContainer').show('slow');
+              $('[id^="offlineZoom_"]').each(function () {
+                $(this).data('tileList',res.tileList);
+                $(this).click(function () {
+                  //console.log(bbox);
+                  var zoomLvl = $(this).val();
+                  //console.log(zoomLvl);
+                  var poly = turf.bboxPolygon(bbox);
+                  //console.log(JSON.stringify(poly));
+                  var area = turf.area(poly);
+                  console.log(area);
+                  if(zoomLvl > 13) {
+                    if(area > 55000000) {
+                      alert('reduce the bounding box area');
+                      $('#cancelDrawPolyOffline').click();
+                      return;
+                    }
+                  }
+                  $('#startStopDrap').show('slow');
+                  $('input[type="checkbox"]:checked').prop('checked',false);
+                  $(this).prop("checked",true);
+                  that.downloadTile($(this).val(),$(this).data('tileList'));
+                });
+              });
+            }
+          }
+          ,error: function (res) {
+          }
+        });
+      }
+
+      vidteq.__offlineMap.prototype.downloadTile = function (zoom,tileList) {
+        console.log(zoom);
+        var that = this;
+        var ajaxData = {zoom:zoom,tileList:tileList};
+        var proto = ('https:' === document.location.protocol ? 'https:' : 'http:');
+        var host = document.location.host || 'localhost:3127';
+        var url = proto + "//" + host;
+        $.ajax({
+          url: url+"/storeTile"
+          ,type: "POST"
+          ,dataType: "json"
+          //,"crossDomain": true
+          ,data: JSON.stringify(ajaxData)
+          ,success: function (res) {
+            if(res.result && res.result == 'error') {
+              alert('Some error !!!');
+            } else if(res.result && res.result == 'done') {
+              alert('Download Completed !!!');
+            } else if(res.progress && res.data && res.data.zoom && res.data.tileList) {
+              if(that.offlineMapTimer) clearTimeout(that.offlineMapTimer);
+              that.offlineMapTimer = setTimeout(function () {
+                that.downloadTile(res.data.zoom,res.data.tileList);
+              },1000);
+              //that.downloadTile(res.data.zoom,res.data.tileList);
+              return;
+            }
+            $('#startStopDrap').hide('slow');
+          }
+          ,error: function (res) {
+            alert('error');
+            $('#startStopDrap').hide('slow');
+          }
+        });
+      }
+
+      vidteq.offlineMap = new vidteq.__offlineMap();
+    </script>
+  </body>
+</html>
